@@ -398,6 +398,11 @@ input[type=range]::-moz-range-thumb{
       <button id="btnGear" class="gear" aria-label="Настройки">⚙</button>
     </div>
 
+    <div id="btBanner" class="bt-banner" style="display:none">
+      🎧 Похоже, микрофон идёт через Bluetooth-наушники — звук может звучать глухо.
+      <button id="btnFixMic" class="bt-banner-btn">Переключить на встроенный</button>
+    </div>
+
     <div class="visualizer-wrap">
       <canvas id="viz" width="600" height="600"></canvas>
     </div>
@@ -818,7 +823,11 @@ let selectedPreset='electro';
 let sessionStartTime=null;
 let timerInterval=null;
 
-function $(id){return document.getElementById(id);}
+function $(id){
+  const el=document.getElementById(id);
+  if(!el) console.warn('Element not found:', id);
+  return el;
+}
 
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -982,15 +991,16 @@ function populateMicSelect(devices, activeIsBT, activeLabel){
     select.appendChild(opt);
   });
   const banner=$('btBanner');
-  banner.style.display = activeIsBT ? 'block' : 'none';
+  if(banner) banner.style.display = activeIsBT ? 'block' : 'none';
 }
 
-$('micDeviceSelect').addEventListener('change', async (e)=>{
+$('micDeviceSelect') && $('micDeviceSelect').addEventListener('change', async (e)=>{
   await engine.switchMic(e.target.value);
 });
 
-$('btnFixMic').addEventListener('click', async ()=>{
+$('btnFixMic') && $('btnFixMic').addEventListener('click', async ()=>{
   const select=$('micDeviceSelect');
+  if(!select) return;
   const options=[...select.options];
   const alt=options.find(o=>!o.textContent.toLowerCase().match(/bluetooth|freebuds|airpods|buds|hands-?free|wireless|наушник/));
   if(alt){
