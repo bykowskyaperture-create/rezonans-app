@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>РЕЗОНАНС — звук, который откликается</title>
+<style>
+/* ============ РЕЗОНАНС — Web Prototype Styles ============ */
+:root{
+  --bg-top:#040a1a;
+  --bg-bottom:#061a30;
+  --glow-main:30,140,255;
+  --glow-2:0,220,255;
+  --glow-3:80,90,255;
+  --ring:90,190,255;
+  --core:50,170,255;
+  --wave:140,220,255;
+  --text-main:#f0f6ff;
+  --text-sub:#a8c8e1;
+  --text-muted:#7f9dbd;
+  --card-bg:#0e2038;
+  --card-border:#284d78;
+  --btn:#28a0ff;
+  --btn-text:#05101f;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:#000;
+  display:flex;justify-content:center;
+  color:var(--text-main);
+  overflow:hidden;
+}
+
+.phone{
+  position:relative;
+  width:100%;
+  max-width:460px;
+  height:100vh;
+  max-height:960px;
+  margin:0 auto;
+  background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
+  overflow:hidden;
+  box-shadow:0 0 60px rgba(0,0,0,.6);
+}
+
+.screen{
+  position:absolute;inset:0;
+  display:none;
+  flex-direction:column;
+  padding:34px 28px;
+  overflow-y:auto;
+}
+.screen.active{display:flex;}
+
+/* ---------- glows ---------- */
+.glow{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(70px);
+  pointer-events:none;
+  z-index:0;
+}
+.glow-main{width:480px;height:480px;left:50%;top:30%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(var(--glow-main),.55),transparent 70%);}
+.glow-main.soft{opacity:.6;}
+.glow-2{width:280px;height:280px;left:8%;top:58%;
+  background:radial-gradient(circle,rgba(var(--glow-2),.35),transparent 70%);}
+.glow-3{width:260px;height:260px;right:5%;top:62%;
+  background:radial-gradient(circle,rgba(var(--glow-3),.3),transparent 70%);}
+
+.sparks{position:absolute;inset:0;pointer-events:none;z-index:0;}
+.sparks::before,.sparks::after{
+  content:"";position:absolute;inset:0;
+  background-image:radial-gradient(1.5px 1.5px at 20% 15%, rgba(255,255,255,.5), transparent),
+    radial-gradient(1.5px 1.5px at 70% 8%, rgba(255,255,255,.4), transparent),
+    radial-gradient(1px 1px at 40% 25%, rgba(255,255,255,.35), transparent),
+    radial-gradient(1.5px 1.5px at 85% 30%, rgba(255,255,255,.4), transparent),
+    radial-gradient(1px 1px at 10% 40%, rgba(255,255,255,.3), transparent),
+    radial-gradient(1.5px 1.5px at 60% 45%, rgba(255,255,255,.35), transparent);
+}
+
+/* ---------- splash ring ---------- */
+.ring-wrap{
+  position:relative;
+  width:340px;height:340px;
+  margin:60px auto 0;
+  z-index:1;
+}
+.ripple{
+  position:absolute;border-radius:50%;
+  border:2px solid rgba(var(--ring),.35);
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  animation:pulse 4.5s ease-out infinite;
+}
+.r1{width:90px;height:90px;animation-delay:0s;}
+.r2{width:140px;height:140px;animation-delay:.5s;}
+.r3{width:190px;height:190px;animation-delay:1s;}
+.r4{width:250px;height:250px;animation-delay:1.5s;}
+.r5{width:300px;height:300px;animation-delay:2s;}
+.r6{width:340px;height:340px;animation-delay:2.5s;}
+@keyframes pulse{
+  0%{opacity:.55;transform:translate(-50%,-50%) scale(.94);}
+  70%{opacity:.12;}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.05);}
+}
+
+.eq-ring{position:absolute;left:50%;top:50%;width:220px;height:220px;transform:translate(-50%,-50%);}
+.eq-ring span{
+  position:absolute;left:50%;top:50%;width:4px;height:14px;
+  background:rgba(var(--wave),.8);border-radius:3px;
+  transform-origin:50% 110px;
+}
+
+.core{
+  position:absolute;left:50%;top:50%;width:120px;height:120px;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #a9dcff, rgb(var(--core)) 60%);
+  box-shadow:0 0 60px 10px rgba(var(--core),.7);
+  display:flex;align-items:center;justify-content:center;
+}
+.core-wave{width:70%;}
+.core-wave path{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;}
+
+/* ---------- brand text ---------- */
+.brand{
+  position:relative;z-index:1;
+  text-align:center;
+  font-size:42px;
+  font-weight:800;
+  letter-spacing:1px;
+  margin:34px 0 6px;
+}
+.letter-r{
+  display:inline-block;
+  background:linear-gradient(135deg,#14C8FF,#2B6BFF);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  position:relative;
+  text-shadow:none;
+  filter:drop-shadow(0 0 10px rgba(60,170,255,.65));
+}
+.tagline{position:relative;z-index:1;text-align:center;color:var(--text-sub);font-size:16px;margin:0 0 40px;}
+
+.btn-primary{
+  position:relative;z-index:1;
+  display:block;margin:0 auto;
+  width:100%;max-width:320px;
+  padding:17px 0;border:none;border-radius:30px;
+  background:linear-gradient(135deg,#2fa8ff,#1f7fe0);
+  color:var(--btn-text);font-size:17px;font-weight:700;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(30,130,255,.4);
+  transition:transform .15s ease;
+}
+.btn-primary:active{transform:scale(.97);}
+.btn-primary:disabled{opacity:.6;cursor:wait;}
+
+.hint{position:relative;z-index:1;text-align:center;margin-top:22px;}
+.hint-title{font-weight:700;color:#cfe6ff;font-size:14px;}
+.hint-sub{color:var(--text-muted);font-size:13px;margin-top:4px;}
+
+.mic-error{
+  position:relative;z-index:1;text-align:center;color:#ff8a8a;
+  font-size:13px;margin-top:16px;min-height:16px;
+}
+
+/* ---------- session screen ---------- */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1;}
+.eyebrow{font-size:12px;letter-spacing:1px;color:var(--text-muted);}
+.status-line{font-size:16px;font-weight:700;margin-top:4px;color:var(--text-main);}
+.gear{
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,.06);border:1px solid rgba(150,180,210,.35);
+  color:#c9dcf0;font-size:18px;cursor:pointer;
+}
+
+.visualizer-wrap{
+  position:relative;z-index:1;
+  display:flex;justify-content:center;
+  margin-top:6px;
+}
+#viz{width:260px;height:260px;}
+
+.waveform-canvas{
+  position:relative;z-index:1;
+  width:100%;height:70px;margin-top:6px;
+}
+
+.time-block{position:relative;z-index:1;text-align:center;margin-top:8px;}
+.elapsed{font-size:34px;font-weight:800;}
+.elapsed-label{color:var(--text-sub);font-size:13px;margin-top:2px;}
+
+.slider-block{position:relative;z-index:1;margin-top:24px;}
+.slider-row{display:flex;justify-content:space-between;font-size:14px;color:var(--text-sub);margin-bottom:8px;}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:8px;border-radius:4px;
+  background:linear-gradient(90deg, rgb(var(--core)) 0%, rgb(var(--core)) var(--fill,68%), #223a56 var(--fill,68%), #223a56 100%);
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+  background:#fff;box-shadow:0 0 0 6px rgba(var(--core),.25);cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:24px;height:24px;border-radius:50%;background:#fff;border:none;
+  box-shadow:0 0 0 6px rgba(var(--core),.25);cursor:pointer;
+}
+
+.controls-row{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:center;gap:36px;
+  margin-top:30px;
+}
+.side-indicator{text-align:center;}
+.side-circle{
+  width:60px;height:60px;border-radius:50%;
+  border:1px solid rgba(150,180,210,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin:0 auto;color:#cfe1f5;
+}
+.side-label{font-size:11px;color:var(--text-sub);margin-top:6px;line-height:1.3;}
+
+.play-btn{
+  width:88px;height:88px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#2fa8ff,#1f7fe0);
+  box-shadow:0 10px 26px rgba(30,130,255,.45);
+  display:flex;align-items:center;justify-content:center;
+}
+.play-btn svg{width:30px;height:30px;fill:#05101f;}
+
+/* ---------- library ---------- */
+.page-title{position:relative;z-index:1;font-size:28px;font-weight:800;margin:6px 0 4px;}
+.page-sub{position:relative;z-index:1;color:var(--text-sub);font-size:14px;margin:0 0 18px;}
+.search-bar{
+  position:relative;z-index:1;
+  background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:24px;padding:14px 18px;color:var(--text-sub);font-size:14px;margin-bottom:20px;
+}
+.card-grid{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  padding-bottom:20px;
+}
+.stream-card{
+  border-radius:20px;padding:16px;min-height:150px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  cursor:pointer;border:2px solid transparent;
+  transition:transform .15s ease, border-color .15s ease;
+  position:relative;overflow:hidden;
+}
+.stream-card:active{transform:scale(.97);}
+.stream-card.selected{border-color:#fff;}
+.stream-icon{
+  width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.stream-name{font-weight:800;font-size:15px;margin-top:12px;color:#fff;}
+.stream-desc{font-size:12px;color:rgba(255,255,255,.85);margin-top:4px;line-height:1.35;}
+
+/* ---------- settings ---------- */
+.setting-row{
+  position:relative;z-index:1;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 0;border-bottom:1px solid rgba(40,80,120,.4);
+}
+.setting-title{font-size:15px;font-weight:600;}
+.setting-desc{font-size:12px;color:var(--text-sub);margin-top:3px;}
+.setting-select{
+  background:#0e2038;color:var(--text-main);border:1px solid var(--card-border);
+  border-radius:12px;padding:8px 10px;font-size:13px;
+}
+
+.toggle{position:relative;display:inline-block;width:52px;height:30px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.slider-toggle{
+  position:absolute;cursor:pointer;inset:0;background:#223a56;border-radius:30px;transition:.2s;
+}
+.slider-toggle::before{
+  content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:.2s;
+}
+.toggle input:checked + .slider-toggle{background:rgb(var(--core));}
+.toggle input:checked + .slider-toggle::before{transform:translateX(22px);}
+
+.tip-card{
+  position:relative;z-index:1;
+  background:rgba(10,45,80,.7);border:1px solid rgba(35,90,130,.7);
+  border-radius:18px;padding:16px;margin-top:16px;
+}
+.tip-title{font-weight:700;font-size:14px;}
+.tip-text{font-size:13px;color:var(--text-sub);margin-top:6px;line-height:1.4;}
+
+.premium-card{
+  position:relative;z-index:1;
+  background:linear-gradient(135deg,#0f2d5a,#173c73);
+  border-radius:20px;padding:20px;margin:18px 0 30px;
+}
+.premium-title{font-weight:800;font-size:18px;}
+.premium-text{font-size:13px;color:#cfe0f7;margin-top:6px;}
+.premium-btn{
+  margin-top:14px;background:#fff;color:#0f2d5a;border:none;
+  padding:10px 18px;border-radius:14px;font-weight:700;font-size:13px;cursor:pointer;
+}
+
+/* ---------- bottom nav ---------- */
+.bottom-nav{
+  position:absolute;left:16px;right:16px;bottom:16px;
+  background:rgba(9,20,38,.9);backdrop-filter:blur(6px);
+  border:1px solid rgba(35,65,100,.8);
+  border-radius:26px;
+  display:flex;justify-content:space-around;
+  padding:10px 0;z-index:2;
+}
+.nav-item{
+  background:none;border:none;color:#5f78a0;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-size:11px;cursor:pointer;
+}
+.nav-item .nav-icon{font-size:20px;}
+.nav-item.active{color:#8bc4ff;}
+
+/* scrollbar */
+.screen::-webkit-scrollbar{width:0;}
+
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- ===================== SPLASH ===================== -->
+  <section id="screen-splash" class="screen active">
+    <div class="glow glow-main"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+    <div class="sparks"></div>
+
+    <div class="ring-wrap">
+      <div class="ripple r1"></div>
+      <div class="ripple r2"></div>
+      <div class="ripple r3"></div>
+      <div class="ripple r4"></div>
+      <div class="ripple r5"></div>
+      <div class="ripple r6"></div>
+      <div class="eq-ring" id="splashEqRing"></div>
+      <div class="core">
+        <svg viewBox="0 0 100 100" class="core-wave">
+          <path d="M10,50 Q20,20 30,50 T50,50 T70,50 T90,50" />
+        </svg>
+      </div>
+    </div>
+
+    <h1 class="brand"><span class="letter-r">Р</span>ЕЗОНАНС</h1>
+    <p class="tagline">Всё вокруг тебя имеет значение</p>
+
+    <button id="btnStart" class="btn-primary">Начать поток</button>
+
+    <div class="hint">
+      <div class="hint-title">🎧&nbsp; Для полного эффекта</div>
+      <div class="hint-sub">используй наушники с шумоизоляцией</div>
+    </div>
+
+    <p id="micError" class="mic-error"></p>
+  </section>
+
+  <!-- ===================== SESSION ===================== -->
+  <section id="screen-session" class="screen">
+    <div class="glow glow-main soft"></div>
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">СЕЙЧАС ЗВУЧИТ</div>
+        <div id="statusLine" class="status-line">Тишина → мягкий фон</div>
+      </div>
+      <button id="btnGear" class="gear" aria-label="Настройки">⚙</button>
+    </div>
+
+    <div class="visualizer-wrap">
+      <canvas id="viz" width="600" height="600"></canvas>
+    </div>
+
+    <canvas id="waveform" width="600" height="140" class="waveform-canvas"></canvas>
+
+    <div class="time-block">
+      <div id="elapsed" class="elapsed">00:00</div>
+      <div class="elapsed-label">время в резонансе</div>
+    </div>
+
+    <div class="slider-block">
+      <div class="slider-row">
+        <span>Погружение</span>
+        <span id="intensityVal">68%</span>
+      </div>
+      <input type="range" id="intensitySlider" min="0" max="100" value="68">
+    </div>
+
+    <div class="controls-row">
+      <div class="side-indicator" id="micIndicator">
+        <div class="side-circle">🎙</div>
+        <div class="side-label">микрофон<br>активен</div>
+      </div>
+
+      <button id="btnPlayPause" class="play-btn">
+        <svg id="iconPause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        <svg id="iconPlay" viewBox="0 0 24 24" style="display:none"><polygon points="7,4 20,12 7,20"/></svg>
+      </button>
+
+      <div class="side-indicator">
+        <div class="side-circle">∞</div>
+        <div class="side-label">таймер</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LIBRARY ===================== -->
+  <section id="screen-library" class="screen">
+    <h2 class="page-title">Библиотека потоков</h2>
+    <p class="page-sub">Выбери, во что превратится звук вокруг</p>
+
+    <div class="search-bar">🔍&nbsp; Найти поток или настроение</div>
+
+    <div class="card-grid" id="cardGrid"></div>
+  </section>
+
+  <!-- ===================== SETTINGS ===================== -->
+  <section id="screen-settings" class="screen">
+    <h2 class="page-title">Настройки</h2>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Реагировать на микрофон</div>
+        <div class="setting-desc">Живой звук вплетается в поток</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="toggleMic" checked><span class="slider-toggle"></span></label>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Чувствительность</div>
+        <div class="setting-desc">Насколько сильно звук влияет на поток</div>
+      </div>
+      <select id="sensSelect" class="setting-select">
+        <option value="0.6">Мягкая</option>
+        <option value="1.0" selected>Средняя</option>
+        <option value="1.6">Высокая</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Качество звука</div>
+        <div class="setting-desc">Выше качество — больше слоёв звучания</div>
+      </div>
+      <select id="qualitySelect" class="setting-select">
+        <option value="standard">Стандартное</option>
+        <option value="high" selected>Высокое</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Фоновый режим</div>
+        <div class="setting-desc">Не прерывать поток при переключении вкладок</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="toggleBg" checked><span class="slider-toggle"></span></label>
+    </div>
+
+    <div class="tip-card">
+      <div class="tip-title">🎧&nbsp; Совет для полного эффекта</div>
+      <div class="tip-text">Используй наушники с шумоизоляцией — так поток звучит объёмнее и естественнее</div>
+    </div>
+
+    <div class="premium-card">
+      <div class="premium-title">РЕЗОНАНС Premium</div>
+      <div class="premium-text">Безлимитные потоки + полная библиотека</div>
+      <button class="premium-btn">Открыть доступ</button>
+    </div>
+  </section>
+
+  <!-- ===================== BOTTOM NAV ===================== -->
+  <nav class="bottom-nav" id="bottomNav" style="display:none">
+    <button class="nav-item active" data-target="screen-session"><span class="nav-icon">〜</span><span>Поток</span></button>
+    <button class="nav-item" data-target="screen-library"><span class="nav-icon">🎵</span><span>Библиотека</span></button>
+    <button class="nav-item" data-target="screen-settings"><span class="nav-icon">⚙</span><span>Настройки</span></button>
+  </nav>
+
+</div>
+
+<script>
+/* ================= РЕЗОНАНС — Web Audio Engine + UI ================= */
+
+const PRESETS = [
+  { key:'electro', name:'Электро-дрон', desc:'Городской шум → ровный гул',
+    c1:'#1e78dc', c2:'#0c3260', icon:'⚡', wave:'sawtooth', freqs:[110,165,220,330], filterBase:600 },
+  { key:'forest', name:'Ночной лес', desc:'Идеально для тишины',
+    c1:'#238c96', c2:'#0a373d', icon:'🌲', wave:'sine', freqs:[98,147,196,294], filterBase:500 },
+  { key:'train', name:'Дальний поезд', desc:'Транспорт превращается в ритм',
+    c1:'#3c5abe', c2:'#141e50', icon:'🚆', wave:'triangle', freqs:[82,123,164,246], filterBase:450 },
+  { key:'cafe', name:'Кафе-фильтр', desc:'Смягчает голоса вокруг',
+    c1:'#5a50c8', c2:'#231950', icon:'☕', wave:'sine', freqs:[130,195,261,392], filterBase:700 },
+  { key:'sleep', name:'Глубокий сон', desc:'Мягкое затухание перед сном',
+    c1:'#1464b4', c2:'#082346', icon:'🌊', wave:'sine', freqs:[65,98,130,196], filterBase:350 },
+  { key:'focus', name:'Фокус-контур', desc:'Ровный фон для концентрации',
+    c1:'#3282d2', c2:'#0f2d55', icon:'💠', wave:'triangle', freqs:[146,220,293,440], filterBase:650 },
+];
+
+/* ---------------------------------------------------------------- */
+/* Audio Engine                                                      */
+/* ---------------------------------------------------------------- */
+class ResonanceEngine{
+  constructor(){
+    this.ctx=null;
+    this.micStream=null;
+    this.analyser=null;
+    this.freqData=null;
+    this.timeData=null;
+    this.masterGain=null;
+    this.filter=null;
+    this.reverb=null;
+    this.oscillators=[];
+    this.oscGains=[];
+    this.lfoNodes=[];
+    this.running=false;
+    this.intensity=0.68;
+    this.micEnabled=true;
+    this.sensitivity=1.0;
+    this.quality='high';
+    this.preset=PRESETS[0];
+    this.volumeSmoothed=0;
+    this.onFrame=null; // callback(level, freqData, timeData)
+    this.startedAt=0;
+  }
+
+  async start(presetKey){
+    if(this.ctx) return;
+    this.ctx=new (window.AudioContext||window.webkitAudioContext)();
+
+    this.masterGain=this.ctx.createGain();
+    this.masterGain.gain.value=0.0001;
+    this.masterGain.connect(this.ctx.destination);
+
+    this.reverb=this.ctx.createConvolver();
+    this.reverb.buffer=this._impulse(3.2,2.4);
+    const reverbGain=this.ctx.createGain();
+    reverbGain.gain.value=0.32;
+    this.reverb.connect(reverbGain);
+    reverbGain.connect(this.masterGain);
+
+    this.filter=this.ctx.createBiquadFilter();
+    this.filter.type='lowpass';
+    this.filter.frequency.value=600;
+    this.filter.Q.value=0.6;
+    this.filter.connect(this.masterGain);
+    this.filter.connect(this.reverb);
+
+    this._buildPad(presetKey||this.preset.key);
+
+    if(this.micEnabled){
+      try{
+        this.micStream=await navigator.mediaDevices.getUserMedia({
+          audio:{echoCancellation:true, noiseSuppression:false, autoGainControl:false}
+        });
+        const src=this.ctx.createMediaStreamSource(this.micStream);
+        this.analyser=this.ctx.createAnalyser();
+        this.analyser.fftSize=2048;
+        this.analyser.smoothingTimeConstant=0.55;
+        src.connect(this.analyser);
+        this.freqData=new Uint8Array(this.analyser.frequencyBinCount);
+        this.timeData=new Uint8Array(this.analyser.fftSize);
+      }catch(e){
+        console.warn('Mic unavailable:',e);
+        this.micEnabled=false;
+        throw e;
+      }
+    }
+
+    const now=this.ctx.currentTime;
+    this.masterGain.gain.cancelScheduledValues(now);
+    this.masterGain.gain.setValueAtTime(0.0001,now);
+    this.masterGain.gain.exponentialRampToValueAtTime(0.42,now+2.5);
+
+    this.running=true;
+    this.startedAt=performance.now();
+    this._loop();
+  }
+
+  _impulse(duration,decay){
+    const rate=this.ctx.sampleRate;
+    const length=Math.floor(rate*duration);
+    const buf=this.ctx.createBuffer(2,length,rate);
+    for(let ch=0;ch<2;ch++){
+      const data=buf.getChannelData(ch);
+      for(let i=0;i<length;i++){
+        data[i]=(Math.random()*2-1)*Math.pow(1-i/length,decay);
+      }
+    }
+    return buf;
+  }
+
+  _buildPad(presetKey){
+    this.oscillators.forEach(o=>{try{o.stop();}catch(e){}});
+    this.lfoNodes.forEach(l=>{try{l.stop();}catch(e){}});
+    this.oscillators=[];this.oscGains=[];this.lfoNodes=[];
+
+    const preset=PRESETS.find(p=>p.key===presetKey)||PRESETS[0];
+    this.preset=preset;
+
+    let freqs=preset.freqs.slice();
+    if(this.quality==='high'){
+      // add an extra octave-up shimmer layer for richness
+      freqs=freqs.concat(preset.freqs.map(f=>f*2));
+    }
+
+    freqs.forEach((freq,i)=>{
+      const osc=this.ctx.createOscillator();
+      osc.type= i<preset.freqs.length ? preset.wave : 'sine';
+      osc.frequency.value=freq;
+
+      const g=this.ctx.createGain();
+      const base= i<preset.freqs.length ? 0.16/preset.freqs.length : 0.05/preset.freqs.length;
+      g.gain.value=base;
+
+      const lfo=this.ctx.createOscillator();
+      lfo.frequency.value=0.025+Math.random()*0.06;
+      const lfoGain=this.ctx.createGain();
+      lfoGain.gain.value=base*0.55;
+      lfo.connect(lfoGain);
+      lfoGain.connect(g.gain);
+      lfo.start();
+
+      osc.connect(g);
+      g.connect(this.filter);
+      osc.start();
+
+      this.oscillators.push(osc);
+      this.oscGains.push(g);
+      this.lfoNodes.push(lfo);
+    });
+
+    if(this.filter){
+      this.filter.frequency.setTargetAtTime(preset.filterBase,this.ctx.currentTime,0.6);
+    }
+  }
+
+  setPreset(key){ if(this.ctx) this._buildPad(key); else this.preset=PRESETS.find(p=>p.key===key)||this.preset; }
+  setIntensity(v){ this.intensity=Math.max(0,Math.min(1,v)); }
+  setSensitivity(v){ this.sensitivity=v; }
+  setMicEnabled(v){ this.micEnabled=v; }
+  setQuality(q){ this.quality=q; if(this.ctx) this._buildPad(this.preset.key); }
+
+  _loop(){
+    if(!this.running) return;
+    let level=0;
+    if(this.analyser && this.micEnabled){
+      this.analyser.getByteFrequencyData(this.freqData);
+      this.analyser.getByteTimeDomainData(this.timeData);
+      let sum=0;
+      for(let i=0;i<this.timeData.length;i++){
+        const v=(this.timeData[i]-128)/128;
+        sum+=v*v;
+      }
+      let rms=Math.sqrt(sum/this.timeData.length);
+      level=Math.min(1, rms*3.4*this.sensitivity);
+    }
+    this.volumeSmoothed += (level-this.volumeSmoothed)*0.08;
+
+    if(this.ctx){
+      const now=this.ctx.currentTime;
+      const infl=this.intensity;
+      const targetCutoff=this.preset.filterBase + this.volumeSmoothed*infl*3400;
+      this.filter.frequency.setTargetAtTime(targetCutoff, now, 0.35);
+      const targetGain=0.34 + this.volumeSmoothed*infl*0.22;
+      this.masterGain.gain.setTargetAtTime(targetGain, now, 0.5);
+    }
+
+    if(this.onFrame) this.onFrame(this.volumeSmoothed, this.freqData, this.timeData);
+    this._raf=requestAnimationFrame(()=>this._loop());
+  }
+
+  stop(){
+    if(!this.ctx) return;
+    const now=this.ctx.currentTime;
+    this.masterGain.gain.cancelScheduledValues(now);
+    this.masterGain.gain.setTargetAtTime(0.0001, now, 1.0);
+    this.running=false;
+    cancelAnimationFrame(this._raf);
+    const ctxRef=this.ctx;
+    const oscs=this.oscillators, lfos=this.lfoNodes, stream=this.micStream;
+    setTimeout(()=>{
+      oscs.forEach(o=>{try{o.stop();}catch(e){}});
+      lfos.forEach(l=>{try{l.stop();}catch(e){}});
+      if(stream) stream.getTracks().forEach(t=>t.stop());
+      try{ctxRef.close();}catch(e){}
+    },1300);
+    this.ctx=null;this.analyser=null;this.micStream=null;
+    this.oscillators=[];this.oscGains=[];this.lfoNodes=[];
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* UI Controller                                                     */
+/* ---------------------------------------------------------------- */
+const engine=new ResonanceEngine();
+let selectedPreset='electro';
+let sessionStartTime=null;
+let timerInterval=null;
+
+function $(id){return document.getElementById(id);}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.target===id);
+  });
+}
+
+/* ---- build equalizer ring ticks on splash ---- */
+function buildEqRing(){
+  const ring=$('splashEqRing');
+  const n=48;
+  for(let i=0;i<n;i++){
+    const tick=document.createElement('span');
+    const angle=(360/n)*i;
+    tick.style.transform=`translate(-50%,-100%) rotate(${angle}deg)`;
+    ring.appendChild(tick);
+  }
+}
+buildEqRing();
+
+/* ---- build library cards ---- */
+function buildCards(){
+  const grid=$('cardGrid');
+  grid.innerHTML='';
+  PRESETS.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='stream-card'+(p.key===selectedPreset?' selected':'');
+    card.style.background=`linear-gradient(160deg, ${p.c1}, ${p.c2})`;
+    card.innerHTML=`
+      <div class="stream-icon">${p.icon}</div>
+      <div>
+        <div class="stream-name">${p.name}</div>
+        <div class="stream-desc">${p.desc}</div>
+      </div>
+    `;
+    card.addEventListener('click',()=>{
+      selectedPreset=p.key;
+      engine.setPreset(p.key);
+      updateStatusLine(engine.volumeSmoothed);
+      buildCards();
+    });
+    grid.appendChild(card);
+  });
+}
+buildCards();
+
+/* ---- status line text based on volume ---- */
+function updateStatusLine(level){
+  const preset=engine.preset||PRESETS[0];
+  let src;
+  if(!engine.micEnabled) src='Микрофон выключен';
+  else if(level<0.08) src='Тишина';
+  else if(level<0.25) src='Слабый шум';
+  else if(level<0.55) src='Городской шум';
+  else src='Громкий шум';
+  $('statusLine').textContent = `${src} → ${preset.name.toLowerCase()}`;
+}
+
+/* ---- timer ---- */
+function startTimer(){
+  sessionStartTime=Date.now();
+  timerInterval=setInterval(()=>{
+    const s=Math.floor((Date.now()-sessionStartTime)/1000);
+    const mm=String(Math.floor(s/60)).padStart(2,'0');
+    const ss=String(s%60).padStart(2,'0');
+    $('elapsed').textContent=`${mm}:${ss}`;
+  },500);
+}
+function stopTimer(){ clearInterval(timerInterval); }
+
+/* ---- canvas visualizer ---- */
+const vizCanvas=$('viz');
+const vizCtx=vizCanvas.getContext('2d');
+const waveCanvas=$('waveform');
+const waveCtx=waveCanvas.getContext('2d');
+
+function drawViz(level, timeData){
+  const w=vizCanvas.width, h=vizCanvas.height;
+  const cx=w/2, cy=h/2;
+  vizCtx.clearRect(0,0,w,h);
+
+  const baseRadii=[70,120,175,235,300].map(r=>r*0.42);
+  baseRadii.forEach((r,i)=>{
+    const wob = Math.sin(Date.now()/900 + i)* (6+level*22);
+    const rad = r + wob + level*30*(i*0.25+0.4);
+    const alpha = Math.max(0.06, 0.85 - i*0.16);
+    vizCtx.beginPath();
+    vizCtx.arc(cx,cy,rad,0,Math.PI*2);
+    vizCtx.strokeStyle=`rgba(${90+i*10},${190},255,${alpha})`;
+    vizCtx.lineWidth=3;
+    vizCtx.stroke();
+  });
+
+  const coreR=26+level*20;
+  const grad=vizCtx.createRadialGradient(cx-coreR*0.3,cy-coreR*0.3,4,cx,cy,coreR);
+  grad.addColorStop(0,'#bfe6ff');
+  grad.addColorStop(1,'rgb(50,170,255)');
+  vizCtx.beginPath();
+  vizCtx.arc(cx,cy,coreR,0,Math.PI*2);
+  vizCtx.fillStyle=grad;
+  vizCtx.shadowColor='rgba(60,170,255,0.8)';
+  vizCtx.shadowBlur=30;
+  vizCtx.fill();
+  vizCtx.shadowBlur=0;
+}
+
+function drawWaveform(timeData){
+  const w=waveCanvas.width, h=waveCanvas.height;
+  waveCtx.clearRect(0,0,w,h);
+  if(!timeData){
+    // idle flat-ish line
+    waveCtx.strokeStyle='rgba(140,220,255,0.35)';
+    waveCtx.lineWidth=3;
+    waveCtx.beginPath();
+    waveCtx.moveTo(0,h/2);
+    waveCtx.lineTo(w,h/2);
+    waveCtx.stroke();
+    return;
+  }
+  const barCount=48;
+  const step=Math.floor(timeData.length/barCount);
+  const barW=w/barCount;
+  for(let i=0;i<barCount;i++){
+    const v=(timeData[i*step]-128)/128;
+    const barH=Math.max(4, Math.abs(v)*h*1.4);
+    const x=i*barW+barW*0.25;
+    waveCtx.fillStyle='rgba(140,220,255,0.75)';
+    waveCtx.fillRect(x, h/2-barH/2, barW*0.5, barH);
+  }
+}
+
+let idleAnim=null;
+function idleLoop(){
+  drawViz(0.04+Math.sin(Date.now()/1500)*0.02, null);
+  drawWaveform(null);
+  idleAnim=requestAnimationFrame(idleLoop);
+}
+idleLoop();
+
+engine.onFrame=(level, freqData, timeData)=>{
+  if(idleAnim){ cancelAnimationFrame(idleAnim); idleAnim=null; }
+  drawViz(level, timeData);
+  drawWaveform(timeData);
+  updateStatusLine(level);
+};
+
+/* ---- controls wiring ---- */
+$('btnStart').addEventListener('click', async ()=>{
+  $('btnStart').disabled=true;
+  $('btnStart').textContent='Слушаю мир вокруг...';
+  $('micError').textContent='';
+  try{
+    engine.setIntensity($('intensitySlider').value/100);
+    await engine.start(selectedPreset);
+    showScreen('screen-session');
+    $('bottomNav').style.display='flex';
+    startTimer();
+    $('iconPause').style.display='';
+    $('iconPlay').style.display='none';
+  }catch(e){
+    $('btnStart').disabled=false;
+    $('btnStart').textContent='Начать поток';
+    $('micError').textContent='Не удалось получить доступ к микрофону. Проверь разрешения браузера и попробуй снова.';
+  }
+});
+
+$('btnPlayPause').addEventListener('click', async ()=>{
+  if(engine.running){
+    engine.stop();
+    stopTimer();
+    $('iconPause').style.display='none';
+    $('iconPlay').style.display='';
+    idleLoop();
+  }else{
+    try{
+      await engine.start(selectedPreset);
+      engine.setIntensity($('intensitySlider').value/100);
+      startTimer();
+      $('iconPause').style.display='';
+      $('iconPlay').style.display='none';
+    }catch(e){
+      $('micError').textContent='Микрофон недоступен.';
+    }
+  }
+});
+
+$('intensitySlider').addEventListener('input', (e)=>{
+  const v=e.target.value;
+  $('intensityVal').textContent=v+'%';
+  e.target.style.setProperty('--fill', v+'%');
+  engine.setIntensity(v/100);
+});
+$('intensitySlider').style.setProperty('--fill','68%');
+
+$('btnGear').addEventListener('click', ()=>showScreen('screen-settings'));
+
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click', ()=>showScreen(btn.dataset.target));
+});
+
+$('toggleMic').addEventListener('change',(e)=>{
+  engine.setMicEnabled(e.target.checked);
+  $('micIndicator').style.opacity = e.target.checked? '1':'0.35';
+  updateStatusLine(engine.volumeSmoothed);
+});
+
+$('sensSelect').addEventListener('change',(e)=>{
+  engine.setSensitivity(parseFloat(e.target.value));
+});
+
+$('qualitySelect').addEventListener('change',(e)=>{
+  engine.setQuality(e.target.value);
+});
+
+/* keep audio running when tab hidden if "background mode" is on */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden && !$('toggleBg').checked){
+    if(engine.running){
+      engine.stop();
+      stopTimer();
+      $('iconPause').style.display='none';
+      $('iconPlay').style.display='';
+    }
+  }
+});
+
+</script>
+</body>
+</html>
