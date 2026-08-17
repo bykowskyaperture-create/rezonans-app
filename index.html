@@ -243,6 +243,15 @@ input[type=range]::-moz-range-thumb{
 }
 .play-btn svg{width:30px;height:30px;fill:#05101f;}
 
+.debug-console{
+  position:relative;z-index:1;
+  margin-top:20px;padding:12px;border-radius:14px;
+  background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);
+  font-family:monospace;font-size:11px;color:#8bc4ff;
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+}
+.dbg-val{color:#fff;font-weight:bold;}
+
 /* ---------- library ---------- */
 .page-title{position:relative;z-index:1;font-size:28px;font-weight:800;margin:6px 0 4px;}
 .page-sub{position:relative;z-index:1;color:var(--text-sub);font-size:14px;margin:0 0 18px;}
@@ -424,6 +433,13 @@ input[type=range]::-moz-range-thumb{
         <div class="side-label">таймер</div>
       </div>
     </div>
+
+    <div id="debugConsole" class="debug-console">
+      <div>Статус: <span id="dbgState" class="dbg-val">остановлен</span></div>
+      <div>Микрофон: <span id="dbgMic" class="dbg-val">нет</span></div>
+      <div>Входной уровень: <span id="dbgVol" class="dbg-val">0.00</span></div>
+      <div>Сглаженный: <span id="dbgSmooth" class="dbg-val">0.00</span></div>
+    </div>
   </section>
 
   <!-- ===================== LIBRARY ===================== -->
@@ -581,7 +597,7 @@ class ResonanceEngine{
     if(!this.ctx) return;
     try{
       const newStream=await navigator.mediaDevices.getUserMedia({
-        audio:{ deviceId:{exact:deviceId}, echoCancellation:true, noiseSuppression:false, autoGainControl:false }
+        audio:{ deviceId:{ideal:deviceId}, echoCancellation:true, noiseSuppression:false, autoGainControl:false }
       });
       if(this.micSource) this.micSource.disconnect();
       if(this.micStream) this.micStream.getTracks().forEach(t=>t.stop());
@@ -601,6 +617,9 @@ class ResonanceEngine{
   async start(presetKey){
     if(this.ctx) return;
     this.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    if(this.ctx.state==='suspended'){
+      try{ await this.ctx.resume(); }catch(e){ console.warn('resume failed',e); }
+    }
 
     this.masterGain=this.ctx.createGain();
     this.masterGain.gain.value=0.0001;
@@ -624,16 +643,26 @@ class ResonanceEngine{
 
     if(this.micEnabled){
       try{
-        this.micStream=await navigator.mediaDevices.getUserMedia({
-          audio:{echoCancellation:true, noiseSuppression:false, autoGainControl:false}
-        });
-        const src=this.ctx.createMediaStreamSource(this.micStream);
+        const constraints={
+          audio: this.preferredDeviceId
+            ? { deviceId:{ideal:this.preferredDeviceId}, echoCancellation:true, noiseSuppression:false, autoGainControl:false }
+            : { echoCancellation:true, noiseSuppression:false, autoGainControl:false }
+        };
+        this.micStream=await navigator.mediaDevices.getUserMedia(constraints);
+        this.micSource=this.ctx.createMediaStreamSource(this.micStream);
         this.analyser=this.ctx.createAnalyser();
         this.analyser.fftSize=2048;
-        this.analyser.smoothingTimeConstant=0.55;
-        src.connect(this.analyser);
+        this.analyser.smoothingTimeConstant=0.15;
+        this.micSource.connect(this.analyser);
         this.freqData=new Uint8Array(this.analyser.frequencyBinCount);
         this.timeData=new Uint8Array(this.analyser.fftSize);
+
+        const track=this.micStream.getAudioTracks()[0];
+        const {inputs, activeIsBT}=await this._refreshDeviceList(track);
+        if(activeIsBT && !this.preferredDeviceId){
+          const alt=inputs.find(d=>!ResonanceEngine.isBluetoothLabel(d.label) && d.deviceId && d.deviceId!=='default');
+          if(alt) await this.switchMic(alt.deviceId);
+        }
       }catch(e){
         console.warn('Mic unavailable:',e);
         this.micEnabled=false;
@@ -744,6 +773,17 @@ class ResonanceEngine{
       this.filter.frequency.setTargetAtTime(targetCutoff, now, 0.06);
       const targetGain=0.30 + this.volumeSmoothed*infl*0.32;
       this.masterGain.gain.setTargetAtTime(targetGain, now, 0.1);
+    }
+
+    const dbgState=document.getElementById('dbgState');
+    if(dbgState){
+      dbgState.textContent = this.ctx ? this.ctx.state : 'остановлен';
+      const dbgMic=document.getElementById('dbgMic');
+      const dbgVol=document.getElementById('dbgVol');
+      const dbgSmooth=document.getElementById('dbgSmooth');
+      if(dbgMic) dbgMic.textContent = (this.micStream && this.micStream.getAudioTracks()[0]) ? (this.micStream.getAudioTracks()[0].label||'активен') : 'выключен';
+      if(dbgVol) dbgVol.textContent = level.toFixed(3);
+      if(dbgSmooth) dbgSmooth.textContent = this.volumeSmoothed.toFixed(3);
     }
 
     if(this.onFrame) this.onFrame(this.volumeSmoothed, this.freqData, this.timeData);
