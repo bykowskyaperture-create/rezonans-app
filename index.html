@@ -385,6 +385,7 @@ input[type=range]::-moz-range-thumb{
     </div>
 
     <p id="micError" class="mic-error"></p>
+    <p id="globalError" class="mic-error" style="color:#ffcf5c;"></p>
   </section>
 
   <!-- ===================== SESSION ===================== -->
@@ -531,6 +532,19 @@ input[type=range]::-moz-range-thumb{
 
 <script>
 /* ================= РЕЗОНАНС — Web Audio Engine + UI ================= */
+
+window.addEventListener('error', function(e){
+  try{
+    const el = document.getElementById('globalError');
+    if(el) el.textContent = 'Ошибка скрипта: ' + (e.message||'') + ' (строка ' + e.lineno + ')';
+  }catch(err){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  try{
+    const el = document.getElementById('globalError');
+    if(el) el.textContent = 'Ошибка промиса: ' + (e.reason && e.reason.message ? e.reason.message : e.reason);
+  }catch(err){}
+});
 
 const PRESETS = [
   { key:'electro', name:'Электро-дрон', desc:'Городской шум → ровный гул',
